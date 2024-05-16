@@ -266,7 +266,7 @@ resource "github_branch_protection_v3" "branch_protection" {
 
     content {
       strict   = required_status_checks.value.strict
-      contexts = required_status_checks.value.contexts
+      # contexts = required_status_checks.value.contexts
       checks   = required_status_checks.value.contexts
     }
   }
