@@ -109,6 +109,12 @@ resource "github_repository" "repository" {
   archived               = var.archived
   topics                 = local.topics
 
+  merge_commit_message = var.merge_commit_message
+  merge_commit_title   = var.merge_commit_title
+
+  squash_merge_commit_message = var.squash_merge_commit_message
+  squash_merge_commit_title   = var.squash_merge_commit_title
+
   archive_on_destroy   = var.archive_on_destroy
   vulnerability_alerts = local.vulnerability_alerts
 
@@ -259,8 +265,8 @@ resource "github_branch_protection_v3" "branch_protection" {
     for_each = local.required_status_checks[count.index]
 
     content {
-      strict   = required_status_checks.value.strict
-      contexts = required_status_checks.value.contexts
+      strict = required_status_checks.value.strict
+      checks = required_status_checks.value.contexts
     }
   }
 

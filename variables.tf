@@ -161,6 +161,30 @@ variable "topics" {
   default     = null
 }
 
+variable "merge_commit_title" {
+  description = "Can be PR_TITLE or MERGE_MESSAGE for a default merge commit title. Applicable only if allow_merge_commit is true."
+  type        = string
+  default     = null
+}
+
+variable "merge_commit_message" {
+  description = "Can be PR_BODY, PR_TITLE, or BLANK for a default merge commit message. Applicable only if allow_merge_commit is true."
+  type        = string
+  default     = null
+}
+
+variable "squash_merge_commit_title" {
+  description = "(Optional) Can be PR_TITLE or COMMIT_OR_PR_TITLE for a default squash merge commit title. Applicable only if allow_squash_merge is true."
+  type        = string
+  default     = null
+}
+
+variable "squash_merge_commit_message" {
+  description = "(Optional) Can be PR_BODY, COMMIT_MESSAGES, or BLANK for a default squash merge commit message. Applicable only if allow_squash_merge is true."
+  type        = string
+  default     = null
+}
+
 variable "extra_topics" {
   description = "(Optional) The list of additional topics of the repository. (Default: [])"
   type        = list(string)
