@@ -146,7 +146,7 @@ variable "team_description" {
 variable "team_user" {
   description = "The user that should be added to the created team."
   type        = string
-  default     = "terraform-test-user"
+  default     = "kevcube"
 }
 
 variable "repository_defaults" {

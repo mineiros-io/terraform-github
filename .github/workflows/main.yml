@@ -18,10 +18,10 @@ jobs:
     name: Static Analysis
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run pre-commit
-        run: make test/docker/pre-commit
+        uses: docker://ghcr.io/antonbabenko/pre-commit-terraform:latest
 
   unit-tests:
     needs: pre-commit
@@ -29,7 +29,7 @@ jobs:
     name: Unit Tests
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Check for Terraform file changes
         uses: getsentry/paths-filter@v2

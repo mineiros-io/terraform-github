@@ -6,8 +6,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 module "repository" {
-  source  = "mineiros-io/repository/github"
-  version = "~> 0.13.0"
+  source = "../.."
 
   module_depends_on = [
     module.team
@@ -24,7 +23,6 @@ module "repository" {
   allow_rebase_merge = false
   allow_squash_merge = false
   allow_auto_merge   = true
-  has_downloads      = false
   auto_init          = true
   gitignore_template = "Terraform"
   license_template   = "mit"
@@ -47,16 +45,15 @@ module "repository" {
 
   admin_collaborators = ["terraform-test-user-1"]
 
-  branch_protections = [
-    {
-      branch                          = "main"
+  branch_protections = {
+    "main" = {
       enforce_admins                  = true
       require_conversation_resolution = true
       require_signed_commits          = true
 
       required_status_checks = {
-        strict   = true
-        contexts = ["ci/travis"]
+        strict = true
+        checks = ["ci/travis"]
       }
 
       required_pull_request_reviews = {
@@ -70,7 +67,7 @@ module "repository" {
         teams = [module.team.name]
       }
     }
-  ]
+  }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -78,8 +75,7 @@ module "repository" {
 # ---------------------------------------------------------------------------------------------------------------------
 
 module "team" {
-  source  = "mineiros-io/team/github"
-  version = "~> 0.8.0"
+  source = "github.com/kevcube/terraform-github-team?ref=a0b2c37"
 
   name        = "DevOps"
   description = "The DevOps Team"

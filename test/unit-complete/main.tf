@@ -32,7 +32,7 @@ module "repository" {
   name                   = var.name
   description            = var.description
   homepage_url           = var.url
-  private                = false
+  visibility             = "public"
   has_issues             = var.has_issues
   has_projects           = var.has_projects
   has_wiki               = var.has_wiki
@@ -42,23 +42,19 @@ module "repository" {
   allow_auto_merge       = var.allow_auto_merge
   delete_branch_on_merge = var.delete_branch_on_merge
   is_template            = var.is_template
-  has_downloads          = var.has_downloads
   auto_init              = var.auto_init
   gitignore_template     = var.gitignore_template
   license_template       = var.license_template
   archived               = false
   topics                 = var.topics
+  archive_on_destroy     = false
 
-  branches = [
-    {
-      name = "develop"
-    },
-    {
-      name = "staging"
-    },
-  ]
+  branches = {
+    develop = {},
+    staging = {},
+  }
 
-  admin_collaborators = ["terraform-test-user-1"]
+  admin_collaborators = ["kevcube"]
 
   admin_team_ids = [
     github_team.team.id
@@ -86,9 +82,8 @@ module "repository" {
     secret       = var.webhook_secret
   }]
 
-  branch_protections_v4 = [
-    {
-      pattern = "staging"
+  branch_protections = {
+    staging = {
 
       allows_deletions                = false
       allows_force_pushes             = false
@@ -108,39 +103,7 @@ module "repository" {
         strict = true
       }
     }
-  ]
-
-  branch_protections_v3 = [
-    {
-      branch                          = "main"
-      enforce_admins                  = true
-      require_conversation_resolution = true
-      require_signed_commits          = true
-
-      required_status_checks = {
-        strict   = true
-        contexts = ["ci/travis"]
-      }
-
-      required_pull_request_reviews = {
-        dismiss_stale_reviews           = true
-        dismissal_users                 = [var.team_user]
-        dismissal_teams                 = [github_team.team.name]
-        require_code_owner_reviews      = true
-        required_approving_review_count = 1
-      }
-
-      restrictions = {
-        users = [var.team_user]
-        teams = [github_team.team.name]
-      }
-    },
-    {
-      branch                 = "develop"
-      enforce_admins         = true
-      require_signed_commits = true
-    }
-  ]
+  }
 
   issue_labels = var.issue_labels
 
@@ -169,14 +132,12 @@ module "repository" {
 module "repository-with-defaults" {
   source = "../.."
 
-  name           = var.repository_with_defaults_name
-  description    = var.repository_with_defaults_description
-  defaults       = var.repository_defaults
-  default_branch = "development"
+  name               = var.repository_with_defaults_name
+  description        = var.repository_with_defaults_description
+  default_branch     = "development"
+  archive_on_destroy = false
 
-  branches = [
-    { name = "development" },
-  ]
+  branches = { development = {} }
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
