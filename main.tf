@@ -265,9 +265,8 @@ resource "github_branch_protection_v3" "branch_protection" {
     for_each = local.required_status_checks[count.index]
 
     content {
-      strict   = required_status_checks.value.strict
-      # contexts = required_status_checks.value.contexts
-      checks   = required_status_checks.value.contexts
+      strict = required_status_checks.value.strict
+      checks = required_status_checks.value.contexts
     }
   }
 
