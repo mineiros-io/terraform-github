@@ -5,7 +5,7 @@
 
 locals {
   # for readability
-  var_gh_labels = var.issue_labels_merge_with_github_labels
+  # var_gh_labels = var.issue_labels_merge_with_github_labels
 
   # issue_labels_merge_with_github_labels = var.gh_labels
   # Per default, GitHub activates vulnerability  alerts for public repositories and disables it for private repositories
@@ -146,8 +146,6 @@ resource "github_branch_default" "default" {
 
   repository = github_repository.repository.name
   branch     = var.default_branch
-
-  # depends_on = [github_branch.branch]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -172,14 +170,19 @@ resource "github_branch_protection" "branch_protection" {
 
   pattern = each.key
 
-  allows_deletions                = each.value.allows_deletions
-  allows_force_pushes             = each.value.allows_force_pushes
-  blocks_creations                = each.value.blocks_creations
   enforce_admins                  = each.value.enforce_admins
-  push_restrictions               = each.value.push_restrictions
-  require_conversation_resolution = each.value.require_conversation_resolution
   require_signed_commits          = each.value.require_signed_commits
   required_linear_history         = each.value.required_linear_history
+  require_conversation_resolution = each.value.require_conversation_resolution
+
+  dynamic "required_status_checks" {
+    for_each = try([each.value.required_status_checks], [])
+
+    content {
+      strict   = required_status_checks.strict
+      contexts = required_status_checks.contexts
+    }
+  }
 
   dynamic "required_pull_request_reviews" {
     for_each = try([each.value.required_pull_request_reviews], [])
@@ -191,17 +194,23 @@ resource "github_branch_protection" "branch_protection" {
       pull_request_bypassers          = required_pull_request_reviews.value.pull_request_bypassers
       require_code_owner_reviews      = required_pull_request_reviews.value.require_code_owner_reviews
       required_approving_review_count = required_pull_request_reviews.value.required_approving_review_count
+      require_last_push_approval      = required_pull_request_reviews.value.require_last_push_approval
     }
   }
 
-  dynamic "required_status_checks" {
-    for_each = try([each.value.required_status_checks], [])
+  dynamic "restrict_pushes" {
+    for_each = try([each.value.restrict_pushes], [])
 
     content {
-      strict   = required_status_checks.strict
-      checks   = required_status_checks.contexts
+      blocks_creations = restrict_pushes.blocks_creations
+      push_allowances  = restrict_pushes.push_allowances
     }
   }
+
+  force_push_bypassers = each.value.force_push_bypassers
+  allows_deletions     = each.value.allows_deletions
+  allows_force_pushes  = each.value.allows_force_pushes
+  lock_branch          = each.value.lock_branch
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
