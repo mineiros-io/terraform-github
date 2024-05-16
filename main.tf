@@ -3,86 +3,59 @@
 # This module creates a GitHub repository with opinionated default settings.
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-# Set some opinionated default settings through var.defaults and locals
 locals {
-  homepage_url           = var.homepage_url == null ? lookup(var.defaults, "homepage_url", "") : var.homepage_url
-  private                = var.private == null ? lookup(var.defaults, "private", true) : var.private
-  private_visibility     = local.private ? "private" : "public"
-  visibility             = var.visibility == null ? lookup(var.defaults, "visibility", local.private_visibility) : var.visibility
-  has_issues             = var.has_issues == null ? lookup(var.defaults, "has_issues", false) : var.has_issues
-  has_projects           = var.has_projects == null ? lookup(var.defaults, "has_projects", false) : length(var.projects) > 0 ? true : var.has_projects
-  has_wiki               = var.has_wiki == null ? lookup(var.defaults, "has_wiki", false) : var.has_wiki
-  allow_merge_commit     = var.allow_merge_commit == null ? lookup(var.defaults, "allow_merge_commit", true) : var.allow_merge_commit
-  allow_rebase_merge     = var.allow_rebase_merge == null ? lookup(var.defaults, "allow_rebase_merge", false) : var.allow_rebase_merge
-  allow_squash_merge     = var.allow_squash_merge == null ? lookup(var.defaults, "allow_squash_merge", false) : var.allow_squash_merge
-  allow_auto_merge       = var.allow_auto_merge == null ? lookup(var.defaults, "allow_auto_merge", false) : var.allow_auto_merge
-  delete_branch_on_merge = var.delete_branch_on_merge == null ? lookup(var.defaults, "delete_branch_on_merge", true) : var.delete_branch_on_merge
-  is_template            = var.is_template == null ? lookup(var.defaults, "is_template", false) : var.is_template
-  has_downloads          = var.has_downloads == null ? lookup(var.defaults, "has_downloads", false) : var.has_downloads
-  auto_init              = var.auto_init == null ? lookup(var.defaults, "auto_init", true) : var.auto_init
-  gitignore_template     = var.gitignore_template == null ? lookup(var.defaults, "gitignore_template", "") : var.gitignore_template
-  license_template       = var.license_template == null ? lookup(var.defaults, "license_template", "") : var.license_template
-  default_branch         = var.default_branch == null ? lookup(var.defaults, "default_branch", null) : var.default_branch
-  standard_topics        = var.topics == null ? lookup(var.defaults, "topics", []) : var.topics
-  topics                 = concat(local.standard_topics, var.extra_topics)
-  template               = var.template == null ? [] : [var.template]
-  issue_labels_create    = var.issue_labels_create == null ? lookup(var.defaults, "issue_labels_create", local.issue_labels_create_computed) : var.issue_labels_create
-
-  issue_labels_create_computed = local.has_issues || length(var.issue_labels) > 0
-
   # for readability
   var_gh_labels = var.issue_labels_merge_with_github_labels
-  gh_labels     = local.var_gh_labels == null ? lookup(var.defaults, "issue_labels_merge_with_github_labels", true) : local.var_gh_labels
 
-  issue_labels_merge_with_github_labels = local.gh_labels
+  # issue_labels_merge_with_github_labels = var.gh_labels
   # Per default, GitHub activates vulnerability  alerts for public repositories and disables it for private repositories
-  vulnerability_alerts = var.vulnerability_alerts != null ? var.vulnerability_alerts : local.private ? false : true
+  vulnerability_alerts = coalesce(var.vulnerability_alerts, var.visibility == "public" ? true : false)
 }
 
-locals {
-  branch_protections_v3 = [
-    for b in var.branch_protections_v3 : merge({
-      branch                          = null
-      enforce_admins                  = null
-      require_conversation_resolution = null
-      require_signed_commits          = null
-      required_status_checks          = {}
-      required_pull_request_reviews   = {}
-      restrictions                    = {}
-    }, b)
-  ]
+# locals {
+#   branch_protections_v3 = [
+#     for b in var.branch_protections_v3 : merge({
+#       branch                          = null
+#       enforce_admins                  = null
+#       require_conversation_resolution = null
+#       require_signed_commits          = null
+#       required_status_checks          = {}
+#       required_pull_request_reviews   = {}
+#       restrictions                    = {}
+#     }, b)
+#   ]
 
-  required_status_checks = [
-    for b in local.branch_protections_v3 :
-    length(keys(b.required_status_checks)) > 0 ? [
-      merge({
-        strict   = null
-        contexts = []
-    }, b.required_status_checks)] : []
-  ]
+#   required_status_checks = [
+#     for b in local.branch_protections_v3 :
+#     length(keys(b.required_status_checks)) > 0 ? [
+#       merge({
+#         strict = null
+#         checks = []
+#     }, b.required_status_checks)] : []
+#   ]
 
-  required_pull_request_reviews = [
-    for b in local.branch_protections_v3 :
-    length(keys(b.required_pull_request_reviews)) > 0 ? [
-      merge({
-        dismiss_stale_reviews           = true
-        dismissal_users                 = []
-        dismissal_teams                 = []
-        require_code_owner_reviews      = null
-        required_approving_review_count = null
-    }, b.required_pull_request_reviews)] : []
-  ]
+#   required_pull_request_reviews = [
+#     for b in local.branch_protections_v3 :
+#     length(keys(b.required_pull_request_reviews)) > 0 ? [
+#       merge({
+#         dismiss_stale_reviews           = true
+#         dismissal_users                 = []
+#         dismissal_teams                 = []
+#         require_code_owner_reviews      = null
+#         required_approving_review_count = null
+#     }, b.required_pull_request_reviews)] : []
+#   ]
 
-  restrictions = [
-    for b in local.branch_protections_v3 :
-    length(keys(b.restrictions)) > 0 ? [
-      merge({
-        users = []
-        teams = []
-        apps  = []
-    }, b.restrictions)] : []
-  ]
-}
+#   restrictions = [
+#     for b in local.branch_protections_v3 :
+#     length(keys(b.restrictions)) > 0 ? [
+#       merge({
+#         users = []
+#         teams = []
+#         apps  = []
+#     }, b.restrictions)] : []
+#   ]
+# }
 
 # ---------------------------------------------------------------------------------------------------------------------
 # Create the repository
@@ -91,23 +64,22 @@ locals {
 resource "github_repository" "repository" {
   name                   = var.name
   description            = var.description
-  homepage_url           = local.homepage_url
-  visibility             = local.visibility
-  has_issues             = local.has_issues
-  has_projects           = local.has_projects
-  has_wiki               = local.has_wiki
-  allow_merge_commit     = local.allow_merge_commit
-  allow_rebase_merge     = local.allow_rebase_merge
-  allow_squash_merge     = local.allow_squash_merge
-  allow_auto_merge       = local.allow_auto_merge
-  delete_branch_on_merge = local.delete_branch_on_merge
-  is_template            = local.is_template
-  has_downloads          = local.has_downloads
-  auto_init              = local.auto_init
-  gitignore_template     = local.gitignore_template
-  license_template       = local.license_template
+  homepage_url           = var.homepage_url
+  visibility             = var.visibility
+  has_issues             = var.has_issues
+  has_projects           = var.has_projects
+  has_wiki               = var.has_wiki
+  allow_merge_commit     = var.allow_merge_commit
+  allow_rebase_merge     = var.allow_rebase_merge
+  allow_squash_merge     = var.allow_squash_merge
+  allow_auto_merge       = var.allow_auto_merge
+  delete_branch_on_merge = var.delete_branch_on_merge
+  is_template            = var.is_template
+  auto_init              = var.auto_init
+  gitignore_template     = var.gitignore_template
+  license_template       = var.license_template
   archived               = var.archived
-  topics                 = local.topics
+  topics                 = var.topics
 
   merge_commit_message = var.merge_commit_message
   merge_commit_title   = var.merge_commit_title
@@ -119,11 +91,12 @@ resource "github_repository" "repository" {
   vulnerability_alerts = local.vulnerability_alerts
 
   dynamic "template" {
-    for_each = local.template
+    for_each = var.template != null ? [true] : []
 
     content {
-      owner      = template.value.owner
-      repository = template.value.repository
+      owner                = var.template.value.owner
+      repository           = var.template.value.repository
+      include_all_branches = var.template.value.include_all_branches
     }
   }
 
@@ -154,17 +127,13 @@ resource "github_repository" "repository" {
 # https://registry.terraform.io/providers/integrations/github/latest/docs/resources/branch
 # ---------------------------------------------------------------------------------------------------------------------
 
-locals {
-  branches_map = { for b in var.branches : b.name => b }
-}
-
 resource "github_branch" "branch" {
-  for_each = local.branches_map
+  for_each = var.branches
 
   repository    = github_repository.repository.name
   branch        = each.key
-  source_branch = try(each.value.source_branch, null)
-  source_sha    = try(each.value.source_sha, null)
+  source_branch = each.value.source_branch
+  source_sha    = each.value.source_sha
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
@@ -173,25 +142,22 @@ resource "github_branch" "branch" {
 # ---------------------------------------------------------------------------------------------------------------------
 
 resource "github_branch_default" "default" {
-  count = local.default_branch != null ? 1 : 0
+  count = var.default_branch != null ? 1 : 0
 
   repository = github_repository.repository.name
-  branch     = local.default_branch
+  branch     = var.default_branch
 
-  depends_on = [github_branch.branch]
+  # depends_on = [github_branch.branch]
 }
 
 # ---------------------------------------------------------------------------------------------------------------------
-# v4 Branch Protection
+# Branch Protection
 # https://registry.terraform.io/providers/integrations/github/latest/docs/resources/branch_protection
 # ---------------------------------------------------------------------------------------------------------------------
 
-locals {
-  branch_protections_v4_map = { for idx, e in var.branch_protections_v4 : try(e._key, e.pattern) => idx }
-}
-
 resource "github_branch_protection" "branch_protection" {
-  for_each = local.branch_protections_v4_map
+  #checkov:skip=CKV_GIT_6:Signed commits are not required
+  for_each = var.branch_protections
 
   # ensure we have all members and collaborators added before applying
   # any configuration for them
@@ -204,91 +170,36 @@ resource "github_branch_protection" "branch_protection" {
 
   repository_id = github_repository.repository.node_id
 
-  pattern = var.branch_protections_v4[each.value].pattern
+  pattern = each.key
 
-  allows_deletions                = try(var.branch_protections_v4[each.value].allows_deletions, false)
-  allows_force_pushes             = try(var.branch_protections_v4[each.value].allows_force_pushes, false)
-  blocks_creations                = try(var.branch_protections_v4[each.value].blocks_creations, false)
-  enforce_admins                  = try(var.branch_protections_v4[each.value].enforce_admins, true)
-  push_restrictions               = try(var.branch_protections_v4[each.value].push_restrictions, [])
-  require_conversation_resolution = try(var.branch_protections_v4[each.value].require_conversation_resolution, false)
-  require_signed_commits          = try(var.branch_protections_v4[each.value].require_signed_commits, false)
-  required_linear_history         = try(var.branch_protections_v4[each.value].required_linear_history, false)
-
-  dynamic "required_pull_request_reviews" {
-    for_each = try([var.branch_protections_v4[each.value].required_pull_request_reviews], [])
-
-    content {
-      dismiss_stale_reviews           = try(required_pull_request_reviews.value.dismiss_stale_reviews, true)
-      restrict_dismissals             = try(required_pull_request_reviews.value.restrict_dismissals, null)
-      dismissal_restrictions          = try(required_pull_request_reviews.value.dismissal_restrictions, [])
-      pull_request_bypassers          = try(required_pull_request_reviews.value.pull_request_bypassers, [])
-      require_code_owner_reviews      = try(required_pull_request_reviews.value.require_code_owner_reviews, true)
-      required_approving_review_count = try(required_pull_request_reviews.value.required_approving_review_count, 0)
-    }
-  }
-
-  dynamic "required_status_checks" {
-    for_each = try([var.branch_protections_v4[each.value].required_status_checks], [])
-
-    content {
-      strict   = try(required_status_checks.value.strict, false)
-      contexts = try(required_status_checks.value.contexts, [])
-    }
-  }
-}
-
-# ---------------------------------------------------------------------------------------------------------------------
-# v3 Branch Protection
-# https://registry.terraform.io/providers/integrations/github/latest/docs/resources/branch_protection_v3
-# ---------------------------------------------------------------------------------------------------------------------
-
-resource "github_branch_protection_v3" "branch_protection" {
-  count = length(local.branch_protections_v3)
-
-  # ensure we have all members and collaborators added before applying
-  # any configuration for them
-  depends_on = [
-    github_repository_collaborator.collaborator,
-    github_team_repository.team_repository,
-    github_team_repository.team_repository_by_slug,
-    github_branch.branch,
-  ]
-
-  repository                      = github_repository.repository.name
-  branch                          = local.branch_protections_v3[count.index].branch
-  enforce_admins                  = local.branch_protections_v3[count.index].enforce_admins
-  require_conversation_resolution = local.branch_protections_v3[count.index].require_conversation_resolution
-  require_signed_commits          = local.branch_protections_v3[count.index].require_signed_commits
-
-  dynamic "required_status_checks" {
-    for_each = local.required_status_checks[count.index]
-
-    content {
-      strict   = required_status_checks.value.strict
-      contexts = required_status_checks.value.contexts
-    }
-  }
+  allows_deletions                = each.value.allows_deletions
+  allows_force_pushes             = each.value.allows_force_pushes
+  blocks_creations                = each.value.blocks_creations
+  enforce_admins                  = each.value.enforce_admins
+  push_restrictions               = each.value.push_restrictions
+  require_conversation_resolution = each.value.require_conversation_resolution
+  require_signed_commits          = each.value.require_signed_commits
+  required_linear_history         = each.value.required_linear_history
 
   dynamic "required_pull_request_reviews" {
-    for_each = local.required_pull_request_reviews[count.index]
+    for_each = try([each.value.required_pull_request_reviews], [])
 
     content {
       dismiss_stale_reviews           = required_pull_request_reviews.value.dismiss_stale_reviews
-      dismissal_users                 = required_pull_request_reviews.value.dismissal_users
-      dismissal_teams                 = [for t in required_pull_request_reviews.value.dismissal_teams : replace(lower(t), "/[^a-z0-9_]/", "-")]
+      restrict_dismissals             = required_pull_request_reviews.value.restrict_dismissals
+      dismissal_restrictions          = required_pull_request_reviews.value.dismissal_restrictions
+      pull_request_bypassers          = required_pull_request_reviews.value.pull_request_bypassers
       require_code_owner_reviews      = required_pull_request_reviews.value.require_code_owner_reviews
       required_approving_review_count = required_pull_request_reviews.value.required_approving_review_count
     }
   }
 
-  dynamic "restrictions" {
-    for_each = local.restrictions[count.index]
+  dynamic "required_status_checks" {
+    for_each = try([each.value.required_status_checks], [])
 
     content {
-      users = restrictions.value.users
-      teams = [for t in restrictions.value.teams : replace(lower(t), "/[^a-z0-9_]/", "-")]
-      apps  = restrictions.value.apps
+      strict   = required_status_checks.strict
+      checks   = required_status_checks.contexts
     }
   }
 }
@@ -302,7 +213,7 @@ locals {
   # all deployed repositories.
   # add labels if new labels in github are added by default.
   # this is the set of labels and colors as of 2020-02-02
-  github_default_issue_labels = local.issue_labels_merge_with_github_labels ? [
+  github_default_issue_labels = var.issue_labels_merge_with_github_labels ? [
     {
       name        = "bug"
       description = "Something isn't working"
@@ -360,7 +271,7 @@ locals {
 }
 
 resource "github_issue_label" "label" {
-  for_each = local.issue_labels_create ? local.issue_labels : {}
+  for_each = var.issue_labels_create ? local.issue_labels : {}
 
   repository  = github_repository.repository.name
   name        = each.value.name
