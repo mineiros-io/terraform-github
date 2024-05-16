@@ -15,25 +15,17 @@ variable "name" {
 
 variable "branches" {
   description = "(Optional) A list of branches to be created in this repository."
-  type        = any
-  # type = list(object({
-  #   name          = string
-  #   source_branch = optional(string)
-  #   source_sha    = optional(string)
-  # }))
-  default = []
-}
-
-variable "defaults" {
-  description = "(Deprecated) DEPRECATED. Please convert defaults to Terraform Module for_each"
-  type        = any
-  default     = {}
+  type = map(object({
+    source_branch = optional(string)
+    source_sha    = optional(string)
+  }))
+  default = {}
 }
 
 variable "description" {
   description = "(Optional) A description of the repository."
   type        = string
-  default     = ""
+  default     = null
 }
 
 variable "homepage_url" {
@@ -42,14 +34,8 @@ variable "homepage_url" {
   default     = null
 }
 
-variable "private" {
-  description = "(Optional) (DEPRECATED: use visibility)"
-  type        = bool
-  default     = null
-}
-
 variable "visibility" {
-  description = "(Optional) Can be 'public', 'private' or 'internal' (GHE only).The visibility parameter overrides the private parameter. Defaults to 'private' if neither private nor visibility are set, default to state of private parameter if it is set."
+  description = "(Optional) Can be 'public', 'private' or 'internal' (GHE only). The visibility parameter overrides the private parameter. Defaults to 'private' if neither private nor visibility are set, default to state of private parameter if it is set."
   type        = string
   default     = null
 }
@@ -102,12 +88,6 @@ variable "delete_branch_on_merge" {
   default     = null
 }
 
-variable "has_downloads" {
-  description = "(Optional) Set to true to enable the (deprecated) downloads features on the repository. (Default: false)"
-  type        = bool
-  default     = null
-}
-
 variable "auto_init" {
   description = "(Optional) Wether or not to produce an initial commit in the repository. (Default: true)"
   type        = bool
@@ -116,12 +96,15 @@ variable "auto_init" {
 
 variable "pages" {
   description = "(Optional) The repository's GitHub Pages configuration. (Default: {})"
-  # type = object({
-  # branch = string
-  # path   = string
-  # cname  = string
-  # })
-  type    = any
+  type = object({
+    source = optional(object({
+      branch = string
+      path   = optional(string)
+    }), null)
+    build_type = optional(string) # Can be `legacy` or `workflow`
+    cname      = optional(string) # Can only be set after repository is created
+  })
+
   default = null
 }
 
@@ -144,7 +127,7 @@ variable "license_template" {
 }
 
 variable "default_branch" {
-  description = "(Optional) The name of the default branch of the repository. NOTE: This can only be set after a repository has already been created, and after a correct reference has been created for the target branch inside the repository. This means a user will have to omit this parameter from the initial repository creation and create the target branch inside of the repository prior to setting this attribute."
+  description = "(Optional) The name of the default branch of the repository."
   type        = string
   default     = null
 }
@@ -194,8 +177,9 @@ variable "extra_topics" {
 variable "template" {
   description = "(Optional) Template repository to use. (Default: {})"
   type = object({
-    owner      = string
-    repository = string
+    owner                = string
+    repository           = string
+    include_all_branches = optional(bool, false)
   })
   default = null
 }
@@ -290,110 +274,50 @@ variable "maintain_teams" {
   default     = []
 }
 
-variable "branch_protections_v3" {
-  description = "(Optional) A list of branch protections to apply to the repository. Default is [] unless branch_protections is set."
-  type        = any
-
-  # We can't use a detailed type specification due to a terraform limitation. However, this might be changed in a future
-  # Terraform version. See https://github.com/hashicorp/terraform/issues/19898 and https://github.com/hashicorp/terraform/issues/22449
-  #
-  # type = list(object({
-  #   branch                 = string
-  #   enforce_admins         = bool
-  #   require_signed_commits = bool
-  #   required_status_checks = object({
-  #     strict   = bool
-  #     contexts = list(string)
-  #   })
-  #   required_pull_request_reviews = object({
-  #     dismiss_stale_reviews           = bool
-  #     dismissal_users                 = list(string)
-  #     dismissal_teams                 = list(string)
-  #     require_code_owner_reviews      = bool
-  #     required_approving_review_count = number
-  #   })
-  #   restrictions = object({
-  #     users = list(string)
-  #     teams = list(string)
-  #   })
-  # }))
-
-  default = []
-
-  # Example:
-  # branch_protections = [
-  #   {
-  #     branch                 = "main"
-  #     enforce_admins         = true
-  #     require_signed_commits = true
-  #
-  #     required_status_checks = {
-  #       strict   = false
-  #       contexts = ["ci/travis"]
-  #     }
-  #
-  #     required_pull_request_reviews = {
-  #       dismiss_stale_reviews           = true
-  #       dismissal_users                 = ["user1", "user2"]
-  #       dismissal_teams                 = ["team-slug-1", "team-slug-2"]
-  #       require_code_owner_reviews      = true
-  #       required_approving_review_count = 1
-  #     }
-  #
-  #     restrictions = {
-  #       users = ["user1"]
-  #       teams = ["team-slug-1"]
-  #     }
-  #   }
-  # ]
-}
-
-variable "branch_protections_v4" {
-  description = "(Optional) A list of v4 branch protections to apply to the repository. Default is []."
-  type        = any
-  # type = list(
-  #   object(
-  #     {
-  #       pattern                         = string
-  #       allows_deletions                = optional(bool, false)
-  #       allows_force_pushes             = optional(bool, false)
-  #       blocks_creations                = optional(bool, false)
-  #       enforce_admins                  = optional(bool, false)
-  #       push_restrictions               = optional(list(string), [])
-  #       require_conversation_resolution = optional(bool, false)
-  #       require_signed_commits          = optional(bool, false)
-  #       required_linear_history         = optional(bool, false)
-  #       required_pull_request_reviews = optional(object(
-  #         {
-  #           dismiss_stale_reviews           = optional(bool, false)
-  #           dismissal_restrictions          = optional(list(string), [])
-  #           pull_request_bypassers          = optional(list(string), [])
-  #           require_code_owner_reviews      = optional(bool, false)
-  #           required_approving_review_count = optional(number, 0)
-  #         }
-  #       ))
-  #       required_status_checks = optional(object(
-  #         {
-  #           strict   = optional(bool, false)
-  #           contexts = optional(list(string), [])
-  #         }
-  #       ))
-  #     }
-  #   )
-  # )
-  default = []
+variable "branch_protections" {
+  description = "(Optional) A list of v4 branch protections to apply to the repository. A map of `pattern` to branch protection config."
+  type = map(
+    object(
+      {
+        allows_deletions                = optional(bool, false)
+        allows_force_pushes             = optional(bool, false)
+        blocks_creations                = optional(bool, false)
+        enforce_admins                  = optional(bool, false)
+        push_restrictions               = optional(list(string), [])
+        require_conversation_resolution = optional(bool, false)
+        require_signed_commits          = optional(bool, false)
+        required_linear_history         = optional(bool, false)
+        required_pull_request_reviews = optional(object(
+          {
+            dismiss_stale_reviews           = optional(bool, false)
+            dismissal_restrictions          = optional(list(string), [])
+            pull_request_bypassers          = optional(list(string), [])
+            require_code_owner_reviews      = optional(bool, false)
+            required_approving_review_count = optional(number, 0)
+          }
+        ))
+        required_status_checks = optional(object(
+          {
+            strict = optional(bool, false)
+            checks = optional(list(string), [])
+          }
+        ))
+      }
+    )
+  )
+  default = {}
 
   validation {
     condition = alltrue(
       [
-        for cfg in var.branch_protections_v4 : try(
+        for cfg in var.branch_protections : try(
           cfg.required_pull_request_reviews.required_approving_review_count >= 0
           && cfg.required_pull_request_reviews.required_approving_review_count <= 6,
           true
         )
       ]
     )
-    error_message = "The value for branch_protections_v4.required_pull_request_reviews.required_approving_review_count must be between 0 and 6, inclusively."
+    error_message = "The value for branch_protections.required_pull_request_reviews.required_approving_review_count must be between 0 and 6, inclusively."
   }
 }
 

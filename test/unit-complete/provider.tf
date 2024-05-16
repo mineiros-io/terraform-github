@@ -1,4 +1,6 @@
-provider "github" {}
+provider "github" {
+  owner = "kbc-trading"
+}
 
 terraform {
   required_version = "~> 1.0"
@@ -11,7 +13,7 @@ terraform {
     }
     tls = {
       source  = "hashicorp/tls"
-      version = "~> 2.1"
+      version = "~> 4"
     }
   }
 }

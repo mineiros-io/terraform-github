@@ -48,6 +48,7 @@ module "repository" {
   license_template       = var.license_template
   archived               = false
   topics                 = var.topics
+  archive_on_destroy     = false
 
   branches = [
     {
@@ -58,7 +59,7 @@ module "repository" {
     },
   ]
 
-  admin_collaborators = ["terraform-test-user-1"]
+  admin_collaborators = ["kevcube"]
 
   admin_team_ids = [
     github_team.team.id
@@ -118,8 +119,8 @@ module "repository" {
       require_signed_commits          = true
 
       required_status_checks = {
-        strict   = true
-        contexts = ["ci/travis"]
+        strict = true
+        checks = ["ci/travis"]
       }
 
       required_pull_request_reviews = {
@@ -169,10 +170,11 @@ module "repository" {
 module "repository-with-defaults" {
   source = "../.."
 
-  name           = var.repository_with_defaults_name
-  description    = var.repository_with_defaults_description
-  defaults       = var.repository_defaults
-  default_branch = "development"
+  name               = var.repository_with_defaults_name
+  description        = var.repository_with_defaults_description
+  defaults           = var.repository_defaults
+  default_branch     = "development"
+  archive_on_destroy = false
 
   branches = [
     { name = "development" },
