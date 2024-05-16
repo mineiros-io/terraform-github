@@ -6,7 +6,7 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 module "repository" {
-  source  = "../.."
+  source = "../.."
 
   module_depends_on = [
     module.team
@@ -52,8 +52,8 @@ module "repository" {
       require_signed_commits          = true
 
       required_status_checks = {
-        strict   = true
-        checks   = ["ci/travis"]
+        strict = true
+        checks = ["ci/travis"]
       }
 
       required_pull_request_reviews = {
@@ -75,7 +75,7 @@ module "repository" {
 # ---------------------------------------------------------------------------------------------------------------------
 
 module "team" {
-  source  = "github.com/kevcube/terraform-github-team?ref=a0b2c37"
+  source = "github.com/kevcube/terraform-github-team?ref=a0b2c37"
 
   name        = "DevOps"
   description = "The DevOps Team"
