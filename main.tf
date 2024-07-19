@@ -16,6 +16,7 @@ locals {
   allow_rebase_merge     = var.allow_rebase_merge == null ? lookup(var.defaults, "allow_rebase_merge", false) : var.allow_rebase_merge
   allow_squash_merge     = var.allow_squash_merge == null ? lookup(var.defaults, "allow_squash_merge", false) : var.allow_squash_merge
   allow_auto_merge       = var.allow_auto_merge == null ? lookup(var.defaults, "allow_auto_merge", false) : var.allow_auto_merge
+  allow_update_branch    = var.allow_update_branch == null ? lookup(var.defaults, "allow_update_branch", false) : var.allow_update_branch
   delete_branch_on_merge = var.delete_branch_on_merge == null ? lookup(var.defaults, "delete_branch_on_merge", true) : var.delete_branch_on_merge
   is_template            = var.is_template == null ? lookup(var.defaults, "is_template", false) : var.is_template
   has_downloads          = var.has_downloads == null ? lookup(var.defaults, "has_downloads", false) : var.has_downloads
@@ -100,6 +101,7 @@ resource "github_repository" "repository" {
   allow_rebase_merge     = local.allow_rebase_merge
   allow_squash_merge     = local.allow_squash_merge
   allow_auto_merge       = local.allow_auto_merge
+  allow_update_branch    = local.allow_update_branch
   delete_branch_on_merge = local.delete_branch_on_merge
   is_template            = local.is_template
   has_downloads          = local.has_downloads

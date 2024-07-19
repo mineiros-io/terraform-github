@@ -96,6 +96,12 @@ variable "allow_auto_merge" {
   default     = null
 }
 
+variable "allow_update_branch" {
+  description = "(Optional) Set to true to allow force pushes on the repository. (Default: false)"
+  type        = bool
+  default     = null
+}
+
 variable "delete_branch_on_merge" {
   description = "(Optional) Whether or not to delete the merged branch after merging a pull request. (Default: false)"
   type        = bool
