@@ -116,8 +116,9 @@ resource "github_repository" "repository" {
     for_each = local.template
 
     content {
-      owner      = template.value.owner
-      repository = template.value.repository
+      owner                = template.value.owner
+      repository           = template.value.repository
+      include_all_branches = template.value.include_all_branches
     }
   }
 
